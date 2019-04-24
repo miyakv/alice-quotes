@@ -1,8 +1,9 @@
 from flask import Flask, request
 import logging
 import json
-import random
 from wikiquotes import wikiquotes_api
+import requests
+import random
 
 app = Flask(__name__)
 
@@ -26,10 +27,15 @@ def main():
     return json.dumps(response)
 
 
+def try_again(res, btns):
+    res['response']['text'] = "Попробуй ещё раз"
+    res['response']['buttons'] = btns
+
+
 def game(res, req):
-    if req['request']['original_utterance'] == "Цитата по автору":
+    user_id = req['session']['user_id']
+    if req['request']['original_utterance'] == "Цитата по автору" or sessionStorage[user_id]["status"] == 1:
         get_quote_by_author(res, req)
-        return
     else:
         res['response']['text'] = '*{}*'.format(req['request']['original_utterance'].lower())
 
@@ -48,14 +54,14 @@ def handle_dialog(res, req):
                     'hide': False
                 }]
         sessionStorage[user_id] = {
-            'first_name': None,
+            "first_name": None,
             'language': None,
             'first_usage': True,
             'used_trolls': set(),
-            "status": False}
+            "status": 0}
         return
 
-    if sessionStorage[user_id]['first_name'] is None:
+    if sessionStorage[user_id]["first_name"] is None:
         first_name = get_first_name(req)
         if req['request']['original_utterance'].lower() == 'помощь':
             get_help(res)
@@ -82,6 +88,26 @@ def handle_dialog(res, req):
             ]
 
     elif sessionStorage[user_id]['first_usage']:
+        if sessionStorage[user_id]['language'] is None:
+            if req['request']['original_utterance'].lower() in ["английский", "испанский"]:
+                lang = req['request']['original_utterance'].lower()
+                sessionStorage[user_id]['language'] = translate(lang)
+            else:
+                logging.info(req['request']['original_utterance'].lower())
+                try_again(res, [
+                    {
+                        'title': 'Английский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Испанский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
+                ])
         res['response']['text'] = f"Приятно познакомиться, {sessionStorage[user_id]['first_name'].title()}, я могу найти тебе любую цитату на любую тему (почти)!" \
                                   f"Выбери что-то из ниже приведенных функций"
         res['response']['buttons'] = [
@@ -109,11 +135,10 @@ def handle_dialog(res, req):
         sessionStorage[user_id]['first_usage'] = False
     else:
         options = ['Цитата по автору', 'Случайная цитата', 'Сменить язык', 'Цитата дня']
-        if req['request']['original_utterance'].lower() in options:
+        if req['request']['original_utterance'] in options or sessionStorage[user_id]["status"] != 0:
             game(res, req)
         elif req['request']['original_utterance'].lower() == "помощь":
             get_help(res)
-            return
         else:
             troll(res, req)
         res['response']['buttons'] = [
@@ -142,7 +167,7 @@ def handle_dialog(res, req):
 
 
 def troll(res, req):
-    troll_data = frozenset('Тебе стоит попробовать снова')
+    troll_data = frozenset(['Тебе стоит попробовать снова'])
     user_id = req['session']['user_id']
     used = sessionStorage[user_id]["used_trolls"]
     if troll_data == used:
@@ -154,41 +179,55 @@ def troll(res, req):
             sessionStorage[user_id]["used_trolls"].add(text)
             break
 
-
-def translate(name):
-    return name
+def translate(text):
+    url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
+    params = {
+            "key": "trnsl.1.1.20190416T141124Z.ac418fee0118467f.aba009a704b3253811d92e3b09cf11769e239b66",
+            "text": text,
+            "lang": 'en',
+            "format": 'plain'
+        }
+    response = requests.get(url, params=params)
+    logging.info(response.json())
+    return response.json()["text"][0]
 
 
 def get_quote_by_author(res, req):
     user_id = req['session']['user_id']
-    quote = wikiquotes_api.get_quotes(translate(req['request']['original_utterance'].capitalize()), sessionStorage[user_id]['language'])
-    res['response']['text'] = 'Вот, что я нашла! {}'.format(quote)
-    res['response']['buttons'] = [
-                {
-                    'title': f"Цитата автора {req['request']['original_utterance'].capitalize()}",
-                    'hide': True
-                },
-                {
-                    'title': 'Цитата по автору',
-                    'hide': True
-                },
-                {
-                    'title': 'Случайная цитата',
-                    'hide': True
-                },
-                {
-                    'title': 'Цитата дня',
-                    'hide': True
-                },
-                {
-                    'title': 'Сменить язык',
-                    'hide': True
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                }
-            ]
+    if sessionStorage[user_id]["status"] == 0:
+        res['response']['text'] = "Какого автора ищем?"
+        sessionStorage[user_id]["status"] = 1
+
+    elif sessionStorage[user_id]["status"] == 1:
+        data = translate(req['request']['original_utterance'])
+        quote = random.choice(wikiquotes_api.get_quotes(data, sessionStorage[user_id]['language']))
+        res['response']['text'] = f'Вот, что я нашла! {quote}'
+        res['response']['buttons'] = [
+                    {
+                        'title': f"Цитата автора {req['request']['original_utterance'].capitalize()}",
+                        'hide': True
+                    },
+                    {
+                        'title': 'Цитата по автору',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Случайная цитата',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Цитата дня',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Сменить язык',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
+                ]
 
 
 def get_first_name(req):
