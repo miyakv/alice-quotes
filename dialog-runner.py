@@ -228,15 +228,12 @@ def get_quote_by_author(res, req):
                         'hide': True
                     }
                 ]
+        sessionStorage[user_id]["status"] = 0
 
 
 def get_first_name(req):
-    # перебираем сущности
     for entity in req['request']['nlu']['entities']:
-        # находим сущность с типом 'YANDEX.FIO'
         if entity['type'] == 'YANDEX.FIO':
-            # Если есть сущность с ключом 'first_name', то возвращаем её значение.
-            # Во всех остальных случаях возвращаем None.
             return entity['value'].get('first_name', None)
 
 
