@@ -484,7 +484,5 @@ def get_first_name(req):
         if entity['type'] == 'YANDEX.FIO':
             return entity['value'].get('first_name', None)
 
-search_author_in_wikipedia(0, 1)
-
 #if __name__ == '__main__':
     #app.run()
