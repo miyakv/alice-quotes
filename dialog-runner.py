@@ -361,7 +361,7 @@ def search_author_in_wikipedia(res, req):
     response = requests.get(url, params=params)
     logging.info(response.json())
     print(response)
-    result = list(response)[1][0], list(response)[2][0], list(response)[3][0]
+    result = list(response.json())[1][0], list(response.json())[2][0], list(response.json())[3][0]
     res['response']['text'] = f'Насколько я знаю, {result[0]} - {result[1]}, Больше об этом человеке можно узнать здесь: {result[2]}'
     res['response']['buttons'] = {
                 {
