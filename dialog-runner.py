@@ -62,7 +62,7 @@ def handle_dialog(res, req):
             'first_usage': True,
             'used_trolls': set(),
             "status": 0,
-			"author": None}
+            "author": None}
         return
 
     if sessionStorage[user_id]["first_name"] is None:
@@ -155,26 +155,26 @@ def handle_dialog(res, req):
                 logging.info(sessionStorage[user_id]['language'])
                 res['response']["text"] = "Успешно! Что будем делать далее?"
                 res['response']['buttons'] = [
-                {
-                    'title': 'Цитата по автору',
-                    'hide': True
-                },
-                {
-                    'title': 'Случайная цитата',
-                    'hide': True
-                },
-                {
-                    'title': 'Цитата дня',
-                    'hide': True
-                },
-                {
-                    'title': 'Сменить язык',
-                    'hide': True
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                }
+                    {
+                        'title': 'Цитата по автору',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Случайная цитата',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Цитата дня',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Сменить язык',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
                 ]
                 return
             else:
@@ -235,29 +235,28 @@ def handle_dialog(res, req):
  
 
 def main_menu(res):
-	res['response']['buttons'] = [
-			{
-				'title': 'Цитата по автору',
-				'hide': True
-			},
-			{
-				'title': 'Случайная цитата',
-				'hide': True
-			},
-			{
-				'title': 'Цитата дня',
-				'hide': True
-			},
-			{
-				'title': 'Сменить язык',
-				'hide': True
-			},
-			{
-				'title': 'Помощь',
-				'hide': True
-			}
-		]
-
+    res['response']['buttons'] = [
+        {
+            'title': 'Цитата по автору',
+            'hide': True
+        },
+        {
+            'title': 'Случайная цитата',
+            'hide': True
+        },
+        {
+            'title': 'Цитата дня',
+            'hide': True
+        },
+        {
+            'title': 'Сменить язык',
+            'hide': True
+        },
+        {
+            'title': 'Помощь',
+            'hide': True
+        }
+    ]
 
 
 def troll(res, req):
@@ -275,16 +274,16 @@ def troll(res, req):
 
 
 def translate(text):
-   url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
-   params = {
+    url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
+    params = {
            "key": "trnsl.1.1.20190416T141124Z.ac418fee0118467f.aba009a704b3253811d92e3b09cf11769e239b66",
            "text": text,
            "lang": 'en',
            "format": 'plain'
        }
-   response = requests.get(url, params=params)
-   logging.info(response.json())
-   return response.json()["text"][0]
+    response = requests.get(url, params=params)
+    logging.info(response.json())
+    return response.json()["text"][0]
 
 
 def get_quote_by_author(res, req):
@@ -328,50 +327,49 @@ def get_quote_by_author(res, req):
                 quote = random.choice(wikiquotes_api.get_quotes(sessionStorage[user_id]['author'], sessionStorage[user_id]['language']))
                 res['response']['text'] = f'Вот, что я нашла! {quote}'
                 res['response']['buttons'] = [
-                	{
-                		   'title': "Ещё цитату",
-                		   'hide': True
-                	},
-                	{
-                		   'title': 'Сменить автора',
-                		   'hide': True
-                	},
-                	{
-                		   'title': 'В меню',
-                		   'hide': True
-               	    },
-                	{
-                		   'title': 'Помощь',
-                		   'hide': True
-                	}
+                    {
+                        'title': "Ещё цитату",
+                        'hide': True
+                    },
+                    {
+                        'title': 'Сменить автора',
+                        'hide': True
+                    },
+                    {
+                        'title': 'В меню',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
                 ]
             elif data == "в меню":
                 sessionStorage[user_id]["status"] = 0
                 res['response']["text"] = "Что будем делать далее?"
                 res['response']['buttons'] = [
-                	{
-                		'title': 'Цитата по автору',
-                		'hide': True
-                	},
-                	{
-                		'title': 'Случайная цитата',
-                		'hide': True
-                	},
-                	{
-                		'title': 'Цитата дня',
-                		'hide': True
-                	},
-                	{
-                		'title': 'Сменить язык',
-                		'hide': True
-                	},
-                	{
-                		'title': 'Помощь',
-                		'hide': True
-                	}
+                    {
+                        'title': 'Цитата по автору',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Случайная цитата',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Цитата дня',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Сменить язык',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
                 ]
                 function_manager(res, req)
-
 
 
 def get_first_name(req):
