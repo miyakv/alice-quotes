@@ -348,6 +348,39 @@ def translate_en(text):
     logging.info(response.json())
     return response.json()["text"][0]
 
+def search_author_in_wikipedia(res, req):
+    text = req['request']['original_utterance'].lower().capitalize()
+    url = 'https://ru.wikipedia.org/w/api.php'
+    params = {
+           "action": 'opensearch',
+           "search": text,
+           "limit": 1,
+           "format": 'json',
+           "inprop": 'url'
+       }
+    response = requests.get(url, params=params)
+    logging.info(response.json())
+    print(response)
+    result = list(response)[1][0], list(response)[2][0], list(response)[3][0]
+    res['response']['text'] = f'Насколько я знаю, {result[0]} - {result[1]}, Больше об этом человеке можно узнать здесь: {result[2]}'
+    res['response']['buttons'] = {
+                {
+                    'title': "Ещё цитату",
+                    'hide': True
+                },
+                {
+                    'title': 'Сменить автора',
+                    'hide': True
+                },
+                {
+                    'title': 'В меню',
+                    'hide': True
+                },
+                {
+                    'title': 'Помощь',
+                    'hide': True
+                }}
+
 
 def get_quote_by_author(res, req):
     user_id = req['session']['user_id']
@@ -374,7 +407,7 @@ def get_quote_by_author(res, req):
 
     elif sessionStorage[user_id]["status"] == 1:
         data = req['request']['original_utterance'].lower()
-        if data not in ["ещё цитату", "сменить автора", "в меню", "помощь"]:
+        if data not in ["ещё цитату", "сменить автора", "в меню", "помощь", "кто это?"]:
             data = translate(data)
             sessionStorage[user_id]["author"] = data
             lang = sessionStorage[user_id]['language']
@@ -385,6 +418,10 @@ def get_quote_by_author(res, req):
                 quote = translate_en(quote)
             res['response']['text'] = f'Вот, что я нашла! {quote}'
             res['response']['buttons'] = [
+                {
+                    'title': "Кто это?",
+                    'hide': True
+                },
                 {
                     'title': "Ещё цитату",
                     'hide': True
@@ -408,10 +445,16 @@ def get_quote_by_author(res, req):
             elif data == "сменить автора":
                 sessionStorage[user_id]["status"] = 0
                 get_quote_by_author(res, req)
+            elif data == "кто это?":
+                search_author_in_wikipedia(res, req)
             elif data == "ещё цитату":
                 quote = random.choice(wikiquotes_api.get_quotes(sessionStorage[user_id]['author'], sessionStorage[user_id]['language']))
-                res['response']['text'] = f'Вот, что я нашла! {quote}'
+                res['response']['text'] = f'Вот, что ещё я нашла! {quote}'
                 res['response']['buttons'] = [
+                    {
+                        'title': "Кто это?",
+                        'hide': True
+                    },
                     {
                         'title': "Ещё цитату",
                         'hide': True
@@ -441,6 +484,7 @@ def get_first_name(req):
         if entity['type'] == 'YANDEX.FIO':
             return entity['value'].get('first_name', None)
 
+search_author_in_wikipedia(0, 1)
 
-if __name__ == '__main__':
-    app.run()
+#if __name__ == '__main__':
+    #app.run()
