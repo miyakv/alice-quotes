@@ -484,5 +484,5 @@ def get_first_name(req):
         if entity['type'] == 'YANDEX.FIO':
             return entity['value'].get('first_name', None)
 
-#if __name__ == '__main__':
-    #app.run()
+if __name__ == '__main__':
+    app.run()
