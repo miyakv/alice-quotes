@@ -4,6 +4,7 @@
 base_url = "https://es.wikiquote.org/w/api.php"
 quote_of_the_day_url = "https://es.wikiquote.org/wiki/Wikiquote:Frase_del_día"
 
+
 def quote_of_the_day_parser(html):
     table = html("table")[1].table
     td = table("td")
@@ -12,5 +13,6 @@ def quote_of_the_day_parser(html):
 
     # Author and quote could have an accent
     return (quote, author)
+
 
 non_quote_sections = ["sobre", "referencias"]

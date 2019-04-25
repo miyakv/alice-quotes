@@ -32,7 +32,7 @@ def try_again(res, btns):
     res['response']['buttons'] = btns
 
 
-def game(res, req):
+def function_manager(res, req):
     user_id = req['session']['user_id']
     if req['request']['original_utterance'] == "Цитата по автору" or sessionStorage[user_id]["status"] == 1:
         get_quote_by_author(res, req)
@@ -48,7 +48,8 @@ def get_help(res):
 def handle_dialog(res, req):
     user_id = req['session']['user_id']
     if req['session']['new']:
-        res['response']['text'] = 'Привет! Меня зовут Алиса. И я не люблю разговаривать с незнакомыми людьми. Назови своё имя!'
+        res['response']['text'] = 'Привет! Меня зовут Алиса. И я не люблю разговаривать ' \
+                                  'с незнакомыми людьми. Назови своё имя!'
         res['response']['buttons'] = [{
                     'title': 'Помощь',
                     'hide': False
@@ -71,7 +72,8 @@ def handle_dialog(res, req):
 
         elif sessionStorage[user_id]['language'] is None:
             sessionStorage[user_id]['first_name'] = first_name
-            res['response']['text'] = f'{first_name.title()}, выбери язык. Я цитирую по-английски и по-испански, но автора и тему можно выбирать по-русски!'
+            res['response']['text'] = f'{first_name.title()}, выбери язык. Я цитирую ' \
+                                      f'по-английски и по-испански, но автора и тему можно выбирать по-русски!'
             res['response']['buttons'] = [
                 {
                     'title': 'Английский',
@@ -82,6 +84,10 @@ def handle_dialog(res, req):
                     'hide': True
                 },
                 {
+                    'title': 'Русский',
+                    'hide': True
+                },
+                {
                     'title': 'Помощь',
                     'hide': True
                 }
@@ -89,7 +95,7 @@ def handle_dialog(res, req):
 
     elif sessionStorage[user_id]['first_usage']:
         if sessionStorage[user_id]['language'] is None:
-            if req['request']['original_utterance'].lower() in ["английский", "испанский"]:
+            if req['request']['original_utterance'].lower() in ["английский", "испанский", "русский"]:
                 lang = req['request']['original_utterance'].lower()
                 sessionStorage[user_id]['language'] = translate(lang)
             else:
@@ -101,6 +107,10 @@ def handle_dialog(res, req):
                     },
                     {
                         'title': 'Испанский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Русский',
                         'hide': True
                     },
                     {
@@ -134,9 +144,83 @@ def handle_dialog(res, req):
         ]
         sessionStorage[user_id]['first_usage'] = False
     else:
-        options = ['Цитата по автору', 'Случайная цитата', 'Сменить язык', 'Цитата дня']
-        if req['request']['original_utterance'] in options or sessionStorage[user_id]["status"] != 0:
-            game(res, req)
+        options = ['цитата по автору', 'случайная цитата', 'цитата дня']
+        if sessionStorage[user_id]['language'] is None:
+            if req['request']['original_utterance'].lower() in ["английский", "испанский", "русский"]:
+                lang = req['request']['original_utterance'].lower()
+                sessionStorage[user_id]['language'] = translate(lang)
+                logging.info(sessionStorage[user_id]['language'])
+                res['response']["text"] = "Успешно! Что будем делать далее?"
+                res['response']['buttons'] = [
+                {
+                    'title': 'Цитата по автору',
+                    'hide': True
+                },
+                {
+                    'title': 'Случайная цитата',
+                    'hide': True
+                },
+                {
+                    'title': 'Цитата дня',
+                    'hide': True
+                },
+                {
+                    'title': 'Сменить язык',
+                    'hide': True
+                },
+                {
+                    'title': 'Помощь',
+                    'hide': True
+                }
+                ]
+                return
+            else:
+                logging.info(req['request']['original_utterance'].lower())
+                try_again(res, [
+                    {
+                        'title': 'Английский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Испанский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Русский',
+                        'hide': True
+                    },
+                    {
+                        'title': 'Помощь',
+                        'hide': True
+                    }
+                ])
+                return
+        elif req['request']['original_utterance'].lower() == "сменить язык":
+            sessionStorage[user_id]["language"] = None
+            res['response']['text'] = 'Выбери язык. Я цитирую ' \
+                                      'по-английски и по-испански, но автора и тему можно выбирать по-русски!'
+            res['response']['buttons'] = [
+                {
+                    'title': 'Английский',
+                    'hide': True
+                },
+                {
+                    'title': 'Испанский',
+                    'hide': True
+                },
+                {
+                    'title': 'Русский',
+                    'hide': True
+                },
+                {
+                    'title': 'Помощь',
+                    'hide': True
+                }
+            ]
+            return
+
+        elif req['request']['original_utterance'].lower() in options or sessionStorage[user_id]["status"] != 0:
+            function_manager(res, req)
         elif req['request']['original_utterance'].lower() == "помощь":
             get_help(res)
         else:
@@ -178,6 +262,7 @@ def troll(res, req):
             res['response']['text'] = text
             sessionStorage[user_id]["used_trolls"].add(text)
             break
+
 
 def translate(text):
     url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
