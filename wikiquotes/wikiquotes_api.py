@@ -21,6 +21,7 @@ def search(author, raw_language):
     # logging_manager.info("API intent: {} author: {} raw_language: {} result: {}".format("search", author, raw_language, answer))
     return answer
 
+
 def get_quotes(author, raw_language):
     # logging_manager.info("API intent: {} author: {} raw_language: {}".format("get_quotes", author, raw_language))
     language = language_manager.from_string(raw_language)
@@ -51,6 +52,7 @@ def get_quotes(author, raw_language):
 
     return answer
 
+
 def quote_of_the_day(raw_language):
     # logging_manager.info("API intent: {} raw_language: {}".format("quote_of_the_day", raw_language))
     language = language_manager.from_string(raw_language)
@@ -65,6 +67,7 @@ def quote_of_the_day(raw_language):
 
     return quote_of_the_day
 
+
 def random_quote(author, raw_language):
     # logging_manager.info("API intent: {} author: {} raw_language: {}".format("random_quote", author, raw_language))
 
@@ -73,6 +76,7 @@ def random_quote(author, raw_language):
     # logging_manager.info("API intent: {} author: {} raw_language: {} result: {}".format("random_quote", author, raw_language, random_quote))
 
     return random_quote
+
 
 def supported_languages():
     # logging_manager.info("API intent: {}".format("supported_languages"))

@@ -38,7 +38,17 @@ def function_manager(res, req):
     user_id = req['session']['user_id']
     if req['request']['original_utterance'] == "Цитата по автору" or sessionStorage[user_id]["status"] == 1:
         get_quote_by_author(res, req)
+    elif req['request']['original_utterance'] == "Цитата дня":
+        if sessionStorage[user_id]['language'] != 'Russian':
+            quote, author = wikiquotes_api.quote_of_the_day(sessionStorage[user_id]['language'].lower())
+            res['response']['text'] = quote + ' (c) ' + author
+            main_menu(res)
+        else:
+            quote, author = translate_en(wikiquotes_api.quote_of_the_day("english"))
+            res['response']['text'] = quote + ' (c) ' + author
+            main_menu(res)
     else:
+        logging.info('402' + req['request']['original_utterance'])
         res['response']['text'] = '*{}*'.format(req['request']['original_utterance'].lower())
 
 
@@ -77,24 +87,7 @@ def handle_dialog(res, req):
             sessionStorage[user_id]['first_name'] = first_name
             res['response']['text'] = f'{first_name.title()}, выбери язык. Я цитирую ' \
                                       f'по-английски и по-испански, но автора и тему можно выбирать по-русски!'
-            res['response']['buttons'] = [
-                {
-                    'title': 'Английский',
-                    'hide': True
-                },
-                {
-                    'title': 'Испанский',
-                    'hide': True
-                },
-                {
-                    'title': 'Русский',
-                    'hide': True
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
-                }
-            ]
+            choose_language(res)
 
     elif sessionStorage[user_id]['first_usage']:
         if sessionStorage[user_id]['language'] is None:
@@ -202,7 +195,23 @@ def handle_dialog(res, req):
             sessionStorage[user_id]["language"] = None
             res['response']['text'] = 'Выбери язык. Я цитирую ' \
                                       'по-английски и по-испански, но автора и тему можно выбирать по-русски!'
-            res['response']['buttons'] = [
+            choose_language(res)
+            return
+
+        elif req['request']['original_utterance'].lower() in options or sessionStorage[user_id]["status"] != 0:
+            function_manager(res, req)
+        elif req['request']['original_utterance'].lower() == "помощь":
+            get_help(res)
+            main_menu(res)
+            return
+        else:
+            troll(res, req)
+            main_menu(res)
+            return
+
+
+def choose_language(res):
+    res['response']['buttons'] = [
                 {
                     'title': 'Английский',
                     'hide': True
@@ -220,19 +229,7 @@ def handle_dialog(res, req):
                     'hide': True
                 }
             ]
-            return
 
-        elif req['request']['original_utterance'].lower() in options or sessionStorage[user_id]["status"] != 0:
-            function_manager(res, req)
-        elif req['request']['original_utterance'].lower() == "помощь":
-            get_help(res)
-            main_menu(res)
-            return
-        else:
-            troll(res, req)
-            main_menu(res)
-            return
- 
 
 def main_menu(res):
     res['response']['buttons'] = [
@@ -257,6 +254,7 @@ def main_menu(res):
             'hide': True
         }
     ]
+    return
 
 
 def troll(res, req):
@@ -279,6 +277,19 @@ def translate(text):
            "key": "trnsl.1.1.20190416T141124Z.ac418fee0118467f.aba009a704b3253811d92e3b09cf11769e239b66",
            "text": text,
            "lang": 'en',
+           "format": 'plain'
+       }
+    response = requests.get(url, params=params)
+    logging.info(response.json())
+    return response.json()["text"][0]
+
+
+def translate_en(text):
+    url = "https://translate.yandex.net/api/v1.5/tr.json/translate"
+    params = {
+           "key": "trnsl.1.1.20190416T141124Z.ac418fee0118467f.aba009a704b3253811d92e3b09cf11769e239b66",
+           "text": text,
+           "lang": 'ru',
            "format": 'plain'
        }
     response = requests.get(url, params=params)
@@ -347,28 +358,7 @@ def get_quote_by_author(res, req):
             elif data == "в меню":
                 sessionStorage[user_id]["status"] = 0
                 res['response']["text"] = "Что будем делать далее?"
-                res['response']['buttons'] = [
-                    {
-                        'title': 'Цитата по автору',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Случайная цитата',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Цитата дня',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Сменить язык',
-                        'hide': True
-                    },
-                    {
-                        'title': 'Помощь',
-                        'hide': True
-                    }
-                ]
+                main_menu(res)
                 function_manager(res, req)
 
 
