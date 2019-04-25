@@ -77,8 +77,7 @@ def random_quote(author, raw_language):
 
     return random_quote
 
-
 def supported_languages():
     # logging_manager.info("API intent: {}".format("supported_languages"))
-    languages = ["english", "spanish", "ru"]
+    languages = ["english", "spanish"]
     return languages

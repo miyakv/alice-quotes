@@ -36,25 +36,72 @@ def try_again(res, btns):
 
 def function_manager(res, req):
     user_id = req['session']['user_id']
-    if req['request']['original_utterance'] == "Цитата по автору" or sessionStorage[user_id]["status"] == 1:
+    if req['request']['original_utterance'].lower() == "цитата по автору" or sessionStorage[user_id]["status"] == 1:
         get_quote_by_author(res, req)
-    elif req['request']['original_utterance'] == "Цитата дня":
-        if sessionStorage[user_id]['language'] != 'Russian':
-            quote, author = wikiquotes_api.quote_of_the_day(sessionStorage[user_id]['language'].lower())
-            res['response']['text'] = quote + ' (c) ' + author
-            main_menu(res)
-        else:
-            quote, author = translate_en(wikiquotes_api.quote_of_the_day("english"))
-            res['response']['text'] = quote + ' (c) ' + author
-            main_menu(res)
+    elif req['request']['original_utterance'].lower() == "цитата дня":
+        day_quote(res, req)
+    elif req['request']['original_utterance'].lower() == 'случайная цитата':
+        random_quote(res, req)
     else:
-        logging.info('402' + req['request']['original_utterance'])
+        logging.info('403 ' + req['request']['original_utterance'])
         res['response']['text'] = '*{}*'.format(req['request']['original_utterance'].lower())
 
 
 def get_help(res):
     res['response']['text'] = 'Тебе никто не поможет, вухвхвахаха.  \
                               Лучше просто ответь на предыдущий вопрос'
+
+
+def day_quote(res, req):
+    user_id = req['session']['user_id']
+    if sessionStorage[user_id]['language'] == 'Russian':
+        quote = translate_en(wikiquotes_api.quote_of_the_day("english")[0])
+        author = translate_en(wikiquotes_api.quote_of_the_day("english")[1])
+    else:
+        quote, author = wikiquotes_api.quote_of_the_day(sessionStorage[user_id]['language'])
+    res['response']['text'] = quote + ' (c) ' + author
+    main_menu(res)
+
+
+def random_quote(res, req):
+    user_id = req['session']['user_id']
+    url = "http://api.forismatic.com/api/1.0/"
+    params = {
+        "method": "getQuote",
+        "format": "json",
+        "lang": 'ru'
+    }
+    response = requests.get(url, params).json()
+    quote = response["quoteText"]
+    author = response["quoteAuthor"]
+    logging.info(sessionStorage[user_id]['language'])
+    if sessionStorage[user_id]['language'] == 'Russian':
+        res['response']['text'] = quote + ' (c) ' + author
+    else:
+        res['response']['text'] = translate(quote) + ' (c) ' + translate(author)
+    main_menu(res)
+
+
+def day_quote_menu(res):
+    res['response']['buttons'] = [
+           {
+               'title': 'Справка про автора',
+               'hide': True
+           },
+           {
+               'title': 'Перевести',
+               'hide': True
+           },
+           {
+               'title': 'В меню',
+               'hide': True
+           },
+           {
+               'title': 'Помощь',
+               'hide': True
+           }
+    ]
+    return
 
 
 def handle_dialog(res, req):
@@ -279,9 +326,14 @@ def translate(text):
            "lang": 'en',
            "format": 'plain'
        }
-    response = requests.get(url, params=params)
-    logging.info(response.json())
-    return response.json()["text"][0]
+    try:
+        response = requests.get(url, params=params)
+        logging.info(response.json())
+        data = response.json()["text"][0]
+    except Exception as e:
+        logging.info(e)
+        return text
+    return data
 
 
 def translate_en(text):
@@ -301,6 +353,23 @@ def get_quote_by_author(res, req):
     user_id = req['session']['user_id']
     if sessionStorage[user_id]["status"] == 0:
         res['response']['text'] = "Какого автора ищем? (Язык ответа - {})".format(sessionStorage[user_id]["language"])
+        res['response']['buttons'] = [
+                {
+                    'title': "Путин",
+                    'hide': True
+                },
+                {
+                    'title': 'Ницше',
+                    'hide': True
+                },
+                {
+                    'title': 'Хайям',
+                    'hide': True
+                },
+                {
+                    'title': 'Ганди',
+                    'hide': True
+                }]
         sessionStorage[user_id]["status"] = 1
 
     elif sessionStorage[user_id]["status"] == 1:
@@ -308,7 +377,12 @@ def get_quote_by_author(res, req):
         if data not in ["ещё цитату", "сменить автора", "в меню", "помощь"]:
             data = translate(data)
             sessionStorage[user_id]["author"] = data
-            quote = random.choice(wikiquotes_api.get_quotes(data, sessionStorage[user_id]['language']))
+            lang = sessionStorage[user_id]['language']
+            if lang == 'Russian':
+                lang = 'English'
+            quote = random.choice(wikiquotes_api.get_quotes(data, lang))
+            if sessionStorage[user_id]["language"] == 'Russian':
+                quote = translate_en(quote)
             res['response']['text'] = f'Вот, что я нашла! {quote}'
             res['response']['buttons'] = [
                 {

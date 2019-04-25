@@ -3,8 +3,7 @@ import unidecode
 
 from . import custom_exceptions
 from . import python_version_manager
-from ..languages import english
-from ..languages import spanish
+from ..languages import english, spanish
 
 
 def from_string(raw_language):
@@ -19,14 +18,17 @@ def from_string(raw_language):
 
     raise custom_exceptions.UnsupportedLanguageException()
 
+
 def transform_to_unicode(string):
     return string if is_unicode(string) else unicode(string)
+
 
 def strip_special_characters(accented_string):
     if is_unicode(accented_string):
         return unidecode.unidecode(accented_string)
     else:
         return accented_string
+
 
 def is_unicode(string):
     if python_version_manager.is_python_2():
