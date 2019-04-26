@@ -363,7 +363,7 @@ def search_author_in_wikipedia(res, req):
     print(response)
     result = list(response.json())[1][0], list(response.json())[2][0], list(response.json())[3][0]
     res['response']['text'] = f'Насколько я знаю, {result[0]} - {result[1]}, Больше об этом человеке можно узнать здесь: {result[2]}'
-    res['response']['buttons'] = {
+    res['response']['buttons'] = [
                 {
                     'title': "Ещё цитату",
                     'hide': True
@@ -379,7 +379,7 @@ def search_author_in_wikipedia(res, req):
                 {
                     'title': 'Помощь',
                     'hide': True
-                }}
+                }]
 
 
 def get_quote_by_author(res, req):
