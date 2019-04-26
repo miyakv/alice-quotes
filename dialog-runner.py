@@ -349,7 +349,8 @@ def translate_en(text):
     return response.json()["text"][0]
 
 def search_author_in_wikipedia(res, req):
-    text = req['request']['original_utterance'].lower().capitalize()
+    user_id = req['session']['user_id']
+    text = sessionStorage[user_id]['author']
     url = 'https://ru.wikipedia.org/w/api.php'
     params = {
            "action": 'opensearch',
