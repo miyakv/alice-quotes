@@ -46,7 +46,7 @@ def try_again(res, btns):
 def function_manager(res, req):
     user_id = req['session']['user_id']
     if check_help(req) == 2:
-        res['response']['text'] = 'Я могу выполнить одну из задача: найти цитату по автору,' \
+        res['response']['text'] = 'Я могу выполнить одну из задач: найти цитату по автору,' \
                                       'прислать случайную цитату или цитату дня. Введи то, что я предложила ранее.'
         return
     if req['request']['original_utterance'].lower() == "цитата по автору" or \
@@ -142,7 +142,7 @@ def handle_dialog(res, req):
     if sessionStorage[user_id]["first_name"] is None:
         first_name = get_first_name(req)
         if check_help(req) == 2:
-            res['response']['text'] = 'Я могу выполнить одну из задача: найти цитату по автору,' \
+            res['response']['text'] = 'Я могу выполнить одну из задач: найти цитату по автору,' \
                                   'прислать случайную цитату или цитату дня. Напиши своё имя.'
             return
         if check_help(req) == 1:
@@ -167,7 +167,7 @@ def handle_dialog(res, req):
                 lang = req['request']['original_utterance'].lower()
                 sessionStorage[user_id]['language'] = translate(lang)
             if check_help(req) == 2:
-                res['response']['text'] = 'Я могу выполнить одну из задача: найти цитату по автору,' \
+                res['response']['text'] = 'Я могу выполнить одну из задач: найти цитату по автору,' \
                                       'прислать случайную цитату или цитату дня. Выбери язык, на котором я буду присылать тебе цитаты.'
                 choose_language(res)
                 return
@@ -204,7 +204,7 @@ def handle_dialog(res, req):
         options = ['цитата по автору', 'случайная цитата', 'цитата дня']
         if sessionStorage[user_id]['language'] is None:
             if check_help(req) == 2:
-                res['response']['text'] = 'Я могу выполнить одну из задача: найти цитату по автору,' \
+                res['response']['text'] = 'Я могу выполнить одну из задач: найти цитату по автору,' \
                                       'прислать случайную цитату или цитату дня. Выбери язык, на котором я ' \
                                           'буду присылать тебе цитаты.'
                 choose_language(res)
@@ -275,7 +275,7 @@ def handle_dialog(res, req):
                 sessionStorage[user_id]["status"] != 0:
             function_manager(res, req)
         elif check_help(req) == 2:
-            res['response']['text'] = 'Я могу выполнить одну из задача: найти цитату по автору,' \
+            res['response']['text'] = 'Я могу выполнить одну из задач: найти цитату по автору,' \
                                       'прислать случайную цитату или цитату дня. Выбери задачу, а я её решу!'
             main_menu(res)
 
@@ -464,13 +464,17 @@ def get_quote_by_author(res, req):
                         "кто это?", "что делать"]:
 
             data = translate(data)
+            logging.info(data)
             sessionStorage[user_id]["author"] = data
             lang = sessionStorage[user_id]['language']
             if lang == 'Russian':
                 lang = 'English'
             quote = random.choice(wikiquotes_api.get_quotes(data, lang))
+            while len(quote) > 350:
+                quote = random.choice(wikiquotes_api.get_quotes(data, lang))
             if sessionStorage[user_id]["language"] == 'Russian':
                 quote = translate_en(quote)
+
             res['response']['text'] = f'Вот, что я нашла! {quote}'
             res['response']['buttons'] = [
                 {
@@ -549,9 +553,16 @@ def get_quote_by_author(res, req):
             elif data == "кто это?":
                 search_author_in_wikipedia(res, req)
             elif data == "ещё цитату":
-                quote = random.choice(wikiquotes_api.get_quotes(
-                    sessionStorage[user_id]['author'],
-                    sessionStorage[user_id]['language']))
+                data = sessionStorage[user_id]["author"]
+                logging.info(data)
+                lang = sessionStorage[user_id]['language']
+                if lang == 'Russian':
+                    lang = 'English'
+                quote = random.choice(wikiquotes_api.get_quotes(data, lang))
+                while len(quote) > 350:
+                    quote = random.choice(wikiquotes_api.get_quotes(data, lang))
+                if sessionStorage[user_id]["language"] == 'Russian':
+                    quote = translate_en(quote)
                 res['response']['text'] = f'Вот, что ещё я нашла! {quote}'
                 res['response']['buttons'] = [
                     {
